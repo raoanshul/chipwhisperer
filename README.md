@@ -30,7 +30,7 @@ First time using ChipWhisperer? Go to our new [documentation site](https://chipw
 ## GIT Source
 Note all development occurs on the [develop](https://github.com/newaetech/chipwhisperer/tree/develop) branch. If you are looking for bleeding edge it's NOT on master - we push each release (and possibly any critical changes) to master. This means that "master" always gives you the latest known-working branch, but there may be new features on the "develop" branch.
 
-## Help!
+## Help! 
 Stuck? If you need a hand, there are a few places you can ask for help:
 * The [NewAE Forum](https://forum.newae.com/) is full of helpful people that can point you in the right direction
 * If you find a bug, let us know through the [issue tracker](https://github.com/newaetech/chipwhisperer/issues)
