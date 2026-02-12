@@ -259,6 +259,47 @@ module cw305_top #(
    assign tio_trigger = aes_busy;
 `endif
 
+// =============================================================================
+// AES with Domain-Oriented Masking (DOM) - Side-Channel Protected
+// =============================================================================
+
+`ifdef AES_DOM
+   wire aes_dom_clk;
+   wire [127:0] aes_dom_key;
+   wire [127:0] aes_dom_pt;
+   wire [127:0] aes_dom_ct;
+   wire aes_dom_load;
+   wire aes_dom_busy;
+
+   assign aes_dom_clk = crypt_clk;
+   assign aes_dom_key = crypt_key;
+   assign aes_dom_pt = crypt_textout;
+   assign crypt_cipherin = aes_dom_ct;
+   assign aes_dom_load = crypt_start;
+   assign crypt_ready = 1'b1;
+   assign crypt_done = ~aes_dom_busy;
+   assign crypt_busy = aes_dom_busy;
+
+   // DOM AES Core
+   aes_dom_wrapper #(
+       .pPT_WIDTH       (pPT_WIDTH),
+       .pKEY_WIDTH      (pKEY_WIDTH),
+       .pCT_WIDTH       (pCT_WIDTH),
+       .N               (1)            // Protection order: 1 = first-order (2 shares)
+   ) u_aes_dom (
+       .clk             (aes_dom_clk),
+       .rst             (reset),
+       .pt_parallel     (aes_dom_pt),
+       .key_parallel    (aes_dom_key),
+       .ct_parallel     (aes_dom_ct),
+       .load            (aes_dom_load),
+       .busy            (aes_dom_busy),
+       .prng_seed       (64'h0)        // Default seed; can be connected to register
+   );
+   
+   assign tio_trigger = aes_dom_busy;
+`endif
+
 
 endmodule
 

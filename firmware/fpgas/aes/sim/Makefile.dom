@@ -1,0 +1,106 @@
+# Makefile for AES-DOM Wrapper simulation
+#
+# This makefile supports simulation of the mixed VHDL/Verilog design.
+# 
+# Option 1: ModelSim/Questa (recommended for mixed-language)
+# Option 2: Vivado Simulator (xsim)
+# Option 3: Verilator (Verilog-only parts)
+#
+# Usage:
+#   make vsim      - Run with ModelSim/Questa
+#   make xsim      - Run with Vivado Simulator
+#   make verilator - Run Verilog-only with Verilator
+#   make clean     - Clean generated files
+
+# Directory paths
+HDL_DIR = ../hdl
+AES_DOM_DIR = ../../../../aes-dom
+CRYPTOSRC_DIR = ../../cryptosrc
+
+# VHDL source files from aes-dom (in dependency order)
+VHDL_SRCS = \
+    $(AES_DOM_DIR)/masked_aes_pkg.vhdl \
+    $(AES_DOM_DIR)/gf2_mul.vhdl \
+    $(AES_DOM_DIR)/shared_mul_gf2.vhdl \
+    $(AES_DOM_DIR)/real_dom_shared_mul_gf2.vhdl \
+    $(AES_DOM_DIR)/shared_mul_gf4.vhdl \
+    $(AES_DOM_DIR)/real_dom_shared_mul_gf4.vhdl \
+    $(AES_DOM_DIR)/shared_mul.vhdl \
+    $(AES_DOM_DIR)/lin_map.vhdl \
+    $(AES_DOM_DIR)/square_scaler.vhdl \
+    $(AES_DOM_DIR)/masked_mul.vhdl \
+    $(AES_DOM_DIR)/inverter.vhdl \
+    $(AES_DOM_DIR)/aes_sbox.vhdl \
+    $(AES_DOM_DIR)/rcon.vhdl \
+    $(AES_DOM_DIR)/aes_key_regs.vhdl \
+    $(AES_DOM_DIR)/aes_state_regs.vhdl \
+    $(AES_DOM_DIR)/mix_columns.vhdl \
+    $(AES_DOM_DIR)/aes_ctrl_lsfr.vhdl \
+    $(AES_DOM_DIR)/aes_top.vhdl \
+    $(HDL_DIR)/aes_dom_verilog_wrapper.vhdl
+
+# Verilog source files
+VERILOG_SRCS = \
+    $(HDL_DIR)/aes_dom_wrapper.v \
+    tb_aes_dom_wrapper.v
+
+# Top entity
+TOP = tb_aes_dom_wrapper
+
+#==============================================================================
+# ModelSim/Questa Simulation
+#==============================================================================
+VSIM_DIR = work_vsim
+
+.PHONY: vsim vsim_compile vsim_run
+
+vsim: vsim_compile vsim_run
+
+vsim_compile:
+	@echo "=== Compiling with ModelSim/Questa ==="
+	@mkdir -p $(VSIM_DIR)
+	cd $(VSIM_DIR) && vlib work
+	cd $(VSIM_DIR) && vcom -2008 $(addprefix ../,$(VHDL_SRCS))
+	cd $(VSIM_DIR) && vlog -sv $(addprefix ../,$(VERILOG_SRCS))
+
+vsim_run:
+	@echo "=== Running ModelSim simulation ==="
+	cd $(VSIM_DIR) && vsim -c -do "run -all; quit" $(TOP)
+
+vsim_gui:
+	@echo "=== Running ModelSim GUI ==="
+	cd $(VSIM_DIR) && vsim -gui $(TOP)
+
+#==============================================================================
+# Vivado Simulator (xsim)
+#==============================================================================
+XSIM_DIR = work_xsim
+
+.PHONY: xsim xsim_compile xsim_run
+
+xsim: xsim_compile xsim_run
+
+xsim_compile:
+	@echo "=== Compiling with Vivado xsim ==="
+	@mkdir -p $(XSIM_DIR)
+	cd $(XSIM_DIR) && xvhdl -2008 $(addprefix ../,$(VHDL_SRCS))
+	cd $(XSIM_DIR) && xvlog -sv $(addprefix ../,$(VERILOG_SRCS))
+	cd $(XSIM_DIR) && xelab -debug typical $(TOP) -s $(TOP)_sim
+
+xsim_run:
+	@echo "=== Running xsim simulation ==="
+	cd $(XSIM_DIR) && xsim $(TOP)_sim -runall
+
+xsim_gui:
+	@echo "=== Running xsim GUI ==="
+	cd $(XSIM_DIR) && xsim $(TOP)_sim -gui
+
+#==============================================================================
+# Clean
+#==============================================================================
+.PHONY: clean
+
+clean:
+	rm -rf $(VSIM_DIR) $(XSIM_DIR)
+	rm -rf work *.vcd *.wlf transcript modelsim.ini
+	rm -rf xsim.dir *.log *.jou *.pb
