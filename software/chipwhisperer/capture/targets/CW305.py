@@ -150,7 +150,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         self._woffset_sam3U = 0x000
         self.default_verilog_defines = 'cw305_aes_defines.v'
         self.default_verilog_defines_full_path = os.path.dirname(cw.__file__) +  '/hardware/firmware/cw305/' + self.default_verilog_defines
-        self.registers = 12 # number of registers we expect to find
+        self.registers = 13 # number of registers we expect to find
         self.bytecount_size = 7 # pBYTECNT_SIZE in Verilog
 
         self._clksleeptime = 1
@@ -159,6 +159,7 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         self.check_done = False
         self.last_key = bytearray([0]*16)
         self.target_name = 'AES'
+        self.REG_CRYPT_IV = None
 
     def _getNAEUSB(self):
         return self._naeusb
@@ -622,6 +623,15 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
         text = inputtext[::-1]
         self.fpga_write(self.REG_CRYPT_TEXTIN, text)
 
+    def loadIV(self, iv):
+        """Write IV to FPGA."""
+        if self.REG_CRYPT_IV is None:
+            target_logger.error("target.REG_CRYPT_IV unset. Have you given target a verilog defines file?")
+            return
+        self.iv = iv
+        iv = iv[::-1]
+        self.fpga_write(self.REG_CRYPT_IV, iv)
+
     def is_done(self):
         """Check if FPGA is done."""
         if self.check_done:
@@ -755,6 +765,8 @@ class CW305(TargetTemplate, ChipWhispererCommonInterface):
             self.go()
         elif cmd == 'k':
             self.loadEncryptionKey(data)
+        elif cmd == 'i':
+            self.loadIV(data)
         else:
             raise ValueError("Unknown command {}".format(cmd))
 

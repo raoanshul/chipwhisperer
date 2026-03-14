@@ -434,7 +434,7 @@ def target(scope : Optional[scopes.ScopeTypes],
     return rtn
 
 def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plaintext : bytearray,
-    key : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False,
+    key : Optional[bytearray]=None, iv : Optional[bytearray]=None, ack : bool=True, poll_done : bool=False,
     as_int : bool=False, always_send_key=False) -> Optional[Trace]:
 
     """Capture a trace, sending plaintext and key
@@ -502,6 +502,9 @@ def capture_trace(scope : scopes.ScopeTypes, target : targets.TargetTypes, plain
 
     if plaintext:
         target.simpleserial_write('p', plaintext)
+    
+    if iv:
+        target.simpleserial_write('i', iv)
 
     ret = scope.capture(poll_done=poll_done)
 
